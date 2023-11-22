@@ -6,7 +6,7 @@ from scipy.interpolate import RBFInterpolator
 import matplotlib.pyplot as plt
 from surface_processing import CreateMesh, PlotMesh
 
-def InterpolateRBF(mesh: np.ndarray, res: int):
+def InterpolateRBF(mesh: np.ndarray, skip: int):
     """
     Create an RBF interpolation of the mesh
     Parameters:
@@ -15,23 +15,18 @@ def InterpolateRBF(mesh: np.ndarray, res: int):
     """
     mesh_points = mesh.points.reshape([-1,3])
     x_points = mesh_points[:,0].reshape(-1,1).astype(float)
-    x_points = x_points[::res]
+    x_points = x_points[::skip]
     y_points = mesh_points[:,1].reshape(-1,1).astype(float)
-    y_points = y_points[::res]
+    y_points = y_points[::skip]
     z_points = mesh_points[:,2].reshape(-1,1).astype(float)
-    z_points = z_points[::res]
-
-    print("points =", mesh_points)
-
-    print("X_points =", x_points)
+    z_points = z_points[::skip]
 
     input_grid = np.hstack((x_points, y_points))
-      
-    print("Input Grid =", input_grid)
 
-    rbf_interpolation = RBFInterpolator(input_grid, z_points, neighbors = 2, kernel = "linear")
+    rbf_interpolation = RBFInterpolator(input_grid, z_points, neighbors = 50, kernel = "linear")
 
     return rbf_interpolation
+
 
 
 def PlotInterpolant(rbf_interpolator: object, x_range: range , y_range: range):
@@ -79,22 +74,26 @@ def PlotMeshAndInterpolant(original_mesh: np.ndarray, rbf_interpolator: object, 
     # Plot the original mesh
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.plot_trisurf(original_mesh.x, original_mesh.y, original_mesh.z, cmap='viridis', alpha=0.5)
 
+    # Load the STL files and add the vectors to the plot
+    ax.add_collection3d(mplot3d.art3d.Poly3DCollection(my_mesh.vectors, alpha = 0.3))
+
+
+    #Plot the Interpolated Mesh
     # Create a mesh grid from x_range and y_range
     x_mesh, y_mesh = np.meshgrid(x_range, y_range)
-
+    
     # Flatten the mesh grid to obtain (x, y) pairs
     xy_pairs = np.column_stack((x_mesh.flatten(), y_mesh.flatten()))
 
     # Compute the interpolated values using RBFInterpolator.__call__(x)
-    z_interp = rbf_interpolator(xy_pairs)
+    z_interp = rbf_interpolator.__call__(xy_pairs)
 
     # Reshape the interpolated values to the shape of the mesh grid
     z_interp = z_interp.reshape(x_mesh.shape)
 
-    # Plot the interpolant on the same axes
-    ax.plot_surface(x_mesh, y_mesh, z_interp, cmap='viridis', alpha=0.5)
+    # Plot the interpolant
+    ax.plot_surface(x_mesh, y_mesh, z_interp, color = "red", linewidth = 0)
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
@@ -107,8 +106,8 @@ original_mesh = my_mesh
 x_range = np.linspace(-20, 20, 100)
 y_range = np.linspace(-20, 20, 100)
 
-rbf_interpolation = InterpolateRBF(my_mesh, res = 100)
+rbf_interpolation = InterpolateRBF(my_mesh, skip = 750)
 
 #PlotInterpolant(rbf_interpolation, [-20,20], [-20,20])
 
-PlotMeshAndInterpolant(my_mesh, rbf_interpolation, x_range, y_range)
+#PlotMeshAndInterpolant(my_mesh, rbf_interpolation, x_range, y_range)
