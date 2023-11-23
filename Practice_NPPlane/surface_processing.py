@@ -34,11 +34,11 @@ def PlotMesh(my_mesh: np.ndarray):
 
     return figure
 
-#my_mesh = CreateMesh("Practice_NPPlane\surface.stl")  # Use a different variable name
+my_mesh = CreateMesh("Practice_NPPlane\surface.stl")  # Use a different variable name
 
 #print(my_mesh.points)
 
-#figure = PlotMesh(my_mesh)
+figure = PlotMesh(my_mesh)
 
 
 

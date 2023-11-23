@@ -10,7 +10,7 @@ import fullcontrol as fc
 
 ################################Slicing Angled Planes####################################################
 
-def SliceInterpolatedPlaneAngle(rbf_interpolation: object, x_values: np.array, angle: float, t_step: float):
+def SliceInterpolatedPlaneAngle(rbf_interpolation: object, x_values: np.array, y_values:np.array, angle: float, t_step: float):
 
     """
     Slice an interpolated object rbf_interpolation along the XZ axis at a given y value
@@ -26,11 +26,15 @@ def SliceInterpolatedPlaneAngle(rbf_interpolation: object, x_values: np.array, a
 
     #plane_equations = PlanesAtAngle(angle, plane_spacing, x_values[0], x_values[-1])
 
-    for i, x0 in enumerate(x_values):
+    for i, y0 in enumerate(y_values):
         t_arr = np.arange(0, 1, t_step)
 
-        x_points = x0*np.ones_like(t_arr) - x0*t_arr
-        y_points = t_arr*x0/np.tan(angle)
+        slope = np.tan(angle)
+        
+        x_points = x_values[i]*np.ones_like(t_arr) + slope*(y_values[-1] - y_values[0])*t_arr
+        y_points = y_values[0] + (y_values[-1] - y_values[0])*t_arr
+
+
         input_grid = np.column_stack((x_points, y_points))
         z_points = rbf_interpolation.__call__(input_grid)
 
@@ -38,14 +42,17 @@ def SliceInterpolatedPlaneAngle(rbf_interpolation: object, x_values: np.array, a
 
         all_points = np.vstack((all_points, formatted_points))
 
+        if i%100 == 0:
+            print("Slicing")
+
     return(all_points)
 
 
 
-x_values = np.linspace(-20, 20, 100)
-y_values = np.linspace(-20, 20, 100)
+x_values = np.linspace(-40, 40, 10)
+y_values = np.linspace(-40, 40, 10)
 
-points = SliceInterpolatedPlaneAngle(rbf_interpolation, x_values, np.pi/4, 0.1)
+points = SliceInterpolatedPlaneAngle(rbf_interpolation, x_values, y_values, np.pi/4, 0.1)
 
 
 steps = []
@@ -55,6 +62,9 @@ for i in range((len(points))):
     z = points[i,2]
 
     steps.append(fc.Point(x = x, y = y, z = z))
+
+    if i%100:
+        print("Creating GCode")
 
 print(fc.transform(steps, "gcode"))
 fc.transform(steps, "plot")
